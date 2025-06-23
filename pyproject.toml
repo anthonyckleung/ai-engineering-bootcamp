@@ -3,5 +3,11 @@ name = "ai-engineering-bootcamp-sprint-00"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.10"
-dependencies = []
+requires-python = ">=3.12"
+dependencies = [
+    "google-genai>=1.21.1",
+    "groq>=0.28.0",
+    "openai>=1.90.0",
+    "pydantic>=2.11.7",
+    "streamlit>=1.46.0",
+]
