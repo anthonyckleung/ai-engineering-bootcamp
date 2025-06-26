@@ -22,6 +22,15 @@ with st.sidebar:
     st.session_state.provider = provider
     st.session_state.model_name = model_name
 
+# Sidebar controls
+    st.sidebar.header("LLM Settings")
+    temperature = st.sidebar.slider(
+        "Temperature", min_value=0.0, max_value=2.0, value=0.7, step=0.01
+    )
+    max_tokens = st.sidebar.slider(
+        "Max Tokens", min_value=1, max_value=500, value=256, step=1
+    )
+
 
 if st.session_state.provider == "OpenAI":
     client = OpenAI(api_key=config.OPENAI_API_KEY)
@@ -31,17 +40,23 @@ else:
     client = genai.Client(api_key=config.GOOGLE_API_KEY)
 
 
-def run_llm(client, messages, max_tokens=500):
+def run_llm(client, messages, temperature=1.0, max_tokens=500):
     if st.session_state.provider == "Google":
+        generation_config={
+            "temperature": temperature,
+            "maxOutputTokens": max_tokens
+        }
         return client.models.generate_content(
             model=st.session_state.model_name,
             contents=[message["content"] for message in messages],
+            generation_config=generation_config
         ).text
     else:
         return client.chat.completions.create(
             model=st.session_state.model_name,
             messages=messages,
-            max_tokens=max_tokens
+            max_tokens=max_tokens,
+            temperature=temperature
         ).choices[0].message.content
 
 
