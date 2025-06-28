@@ -1,9 +1,18 @@
 import streamlit as st
+
+import sys
+import asyncio
+
+if sys.platform.startswith('linux'):
+    asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
+
+
 from openai import OpenAI
 from groq import Groq
 from google import genai
 
 from core.config import config
+
 
 ## Lets create a sidebar with a dropdown for the model list and providers
 with st.sidebar:
@@ -22,7 +31,7 @@ with st.sidebar:
     st.session_state.provider = provider
     st.session_state.model_name = model_name
 
-# Sidebar controls
+    # Sidebar controls for Temperature and Max Tokens
     st.sidebar.header("LLM Settings")
     temperature = st.sidebar.slider(
         "Temperature", min_value=0.0, max_value=2.0, value=0.7, step=0.01
