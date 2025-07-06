@@ -194,3 +194,7 @@ cython_debug/
 .cursorindexingignore
 
 data/*
+
+qdrant_storage/*
+
+.DS_Store
