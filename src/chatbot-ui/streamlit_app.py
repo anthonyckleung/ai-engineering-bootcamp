@@ -1,17 +1,21 @@
 import streamlit as st
+from qdrant_client import QdrantClient
+from openai import OpenAI
+from groq import Groq
+from google import genai
+
+from retrieval import rag_pipeline
+from core.config import config
+
+qdrant_client = QdrantClient(
+    url=f"http://{config.QDRANT_URL}:6333"
+)
 
 import sys
 import asyncio
 
 if sys.platform.startswith('linux'):
     asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
-
-
-from openai import OpenAI
-from groq import Groq
-from google import genai
-
-from core.config import config
 
 
 ## Lets create a sidebar with a dropdown for the model list and providers
@@ -83,6 +87,7 @@ if prompt := st.chat_input("Hello! How can I assist you today?"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        output = run_llm(client, st.session_state.messages)
-        st.write(output)
-    st.session_state.messages.append({"role": "assistant", "content": output})
+        # output = run_llm(client, st.session_state.messages)
+        output = rag_pipeline(prompt, qdrant_client)
+        st.write(output["answer"])
+    st.session_state.messages.append({"role": "assistant", "content": output["answer"]})
