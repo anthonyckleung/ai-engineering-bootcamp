@@ -2,20 +2,19 @@
 
 
 ## Problem
-Company Y is professional networking platform and is utilized
+Company Y is a professional networking platform and is utilized
 by job seekers and recruiters. This company
 currently uses a rule-based system flags whether a job
 posting is fraudulent or not. Alternatively, the company
 receives complaints from people using their website on these suspicious
 job postings. The role of fraud analysts
-at this company is to determine validity of these flags to ensure
+at this company is to determine the validity of these flags to ensure
 they are not false-positives. Occasionally ticket volume can be
 overwhelmingly high for the team to handle. 
 
 ## Goal
 Create an AI assistant for the fraud analyst team to leverage
-in resolving issues/tickets/complaints efficiently regarding suspicious job
-postings on their website. 
+in resolving issues/tickets/complaints efficiently. 
 
 ## Concept Design
 ![](concept.png)
@@ -29,7 +28,7 @@ postings on their website.
 
 Based on the Kaggle dataset with 18K postings where 600 of them
 are fraudulent. Consists of 18 columns including the following
-data points:
+text data points:
 * Job title
 * Salary range
 * Company profile
