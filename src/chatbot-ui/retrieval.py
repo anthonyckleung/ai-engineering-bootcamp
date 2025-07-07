@@ -45,8 +45,7 @@ def retrieve_context(query, qdrant_client, top_k=5):
 
     for result in results.points:
         retrieved_context_ids.append(result.id)
-        retrieved_context.append(f"""Title: {result.payload['title']} 
-                                 \nCompany Profile: {result.payload['company_profile']}""")
+        retrieved_context.append(result.payload['text'])
         similarity_scores.append(result.score)
 
     return {
@@ -79,7 +78,8 @@ def build_prompt(context, question):
     processed_context = process_context(context)
 
     prompt = f"""
-You are a job network assistant that can answer questions about the current job postings.
+You are a job network assistant that can answer questions about the current job postings
+and can identify whether the posting real or fake.
 
 You will be given a question and a list of context.
 
