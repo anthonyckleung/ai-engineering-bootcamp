@@ -7,6 +7,8 @@ services:
       - 8501:8501
     env_file:
       - .env
+    environment:
+      - HOME=/app
     restart: unless-stopped
     volumes:
       - ./src/chatbot_ui:/app/src/chatbot_ui
