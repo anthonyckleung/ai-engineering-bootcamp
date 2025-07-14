@@ -14,7 +14,14 @@ class Config(BaseSettings):
     LANGSMITH_ENDPOINT: str
     LANGSMITH_API_KEY: str
     LANGSMITH_PROJECT: str
+    RAG_PROMPT_TEMPLATE_PATH: str = "src/api/rag/prompts/rag_generation.yaml"
 
     model_config = SettingsConfigDict(env_file=".env")
 
+class Settings(BaseSettings):
+
+    DEFAULT_TIMEOUT: float = 30.0
+    VERSION: str = "0.1.0"
+
 config = Config()
+settings = Settings()
