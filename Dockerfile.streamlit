@@ -29,7 +29,16 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Create non-root user and set permissions
 RUN addgroup --system app && \
     adduser --system --ingroup app app && \
-    chown -R app:app /app
+    chown -R app:app /app && \
+    mkdir -p /home/app && \
+    chown -R app:app /home/app && \
+    mkdir -p /home/app/.streamlit && \
+    mkdir -p /home/app/.streamlit/data && \
+    mkdir -p /home/app/.streamlit/cache && \
+    chown -R app:app /home/app/.streamlit
+
+# Set home directory for the user
+ENV HOME=/home/app
 
 # Switch to non-root user
 USER app
