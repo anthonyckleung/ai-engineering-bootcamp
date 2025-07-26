@@ -12,7 +12,7 @@ ENV UV_LINK_MODE=copy
 ENV PYTHONPATH="/app/src:$PYTHONPATH"
 
 
-# Copy and install your dependencies as before
+# Copy and install dependencies
 COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen
 
@@ -41,4 +41,4 @@ USER app
 
 EXPOSE 8000
 
-CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
