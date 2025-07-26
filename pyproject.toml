@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "boto3>=1.39.14",
     "fastapi>=0.116.1",
     "google-genai>=1.21.1",
     "groq>=0.28.0",
@@ -17,6 +18,8 @@ dependencies = [
     "langgraph-prebuilt>=0.5.2",
     "langsmith>=0.4.4",
     "matplotlib>=3.10.3",
+    "minio>=7.2.16",
+    "mlflow>=3.1.4",
     "nltk>=3.9.1",
     "openai>=1.90.0",
     "pandas>=2.3.0",

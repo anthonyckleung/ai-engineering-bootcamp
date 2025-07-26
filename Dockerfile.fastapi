@@ -1,3 +1,4 @@
+# Base image
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
 WORKDIR /app
@@ -10,12 +11,10 @@ ENV UV_LINK_MODE=copy
 # Set Python path to include the src directory for imports
 ENV PYTHONPATH="/app/src:$PYTHONPATH"
 
-# Copy only dependency files first for better layer caching
-COPY pyproject.toml uv.lock ./
 
-# Install dependencies
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen
+# Copy and install your dependencies as before
+COPY pyproject.toml uv.lock ./
+RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen
 
 # Copy application code
 COPY src/api ./src/api/
@@ -30,12 +29,16 @@ ENV PATH="/app/.venv/bin:$PATH"
 RUN addgroup --system app && \
     adduser --system --ingroup app app && \
     chown -R app:app /app
+RUN apt-get update && apt-get install -y gcc g++ build-essential
+RUN python3 -m ensurepip --upgrade
+RUN python3 -m pip install --upgrade pip setuptools wheel
 
-# Switch to non-root user
+# Now spaCy download should work
+RUN python3 -m spacy download en_core_web_sm
+
+
 USER app
 
-# Expose the FastAPI port
 EXPOSE 8000
 
-# Command to run the application
-CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
