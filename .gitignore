@@ -198,3 +198,11 @@ data/*
 qdrant_storage/*
 
 .DS_Store
+
+postgres_data/*
+
+minio_data/*
+
+mlflow_artifacts/*
+
+mlruns/*

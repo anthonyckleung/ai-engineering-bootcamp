@@ -33,3 +33,73 @@ services:
     restart: unless-stopped
     volumes:
       - ./src/api:/app/src/api
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_DB: postgresdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    restart: unless-stopped
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+
+  minio:
+    image: quay.io/minio/minio
+    container_name: minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_STORAGE_USE_HTTPS: false
+    command: server /data --console-address ":9001"
+    ports:
+      - 9000:9000
+      - 9001:9001
+    volumes:
+      - ./minio_data:/data
+    restart: unless-stopped
+
+  # minio-setup:
+  #   image: quay.io/minio/mc
+  #   depends_on:
+  #     - minio
+  #   volumes:
+  #     - ./create-bucket.sh:/create-bucket.sh
+  #   entrypoint: /bin/sh 
+  #   command: -c "sleep 10 && chmod +x /create-bucket.sh && /create-bucket.sh"
+  #   environment:
+  #     - MINIO_ROOT_USER="minioadmin"
+  #     - MINIO_ROOT_PASSWORD="minioadmin"
+  #   networks:
+  #     - backend
+
+  # mlflow:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.mlflow
+  #   image: ghcr.io/mlflow/mlflow:v2.0.1
+  #   container_name: mlflow-server
+  #   ports:
+  #     - 5001:5001
+  #   networks:
+  #     - frontend
+  #     - backend
+  #   environment:
+  #     - AWS_ACCESS_KEY_ID=minioadmin
+  #     - AWS_SECRET_ACCESS_KEY=minioadmin
+  #     - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+  #     - MLFLOW_S3_IGNORE_TLS=true
+  #   depends_on:
+  #     - postgres
+  #     - minio-setup
+  #     - minio
+
+# networks:
+#   frontend:
+#     driver: bridge
+#   backend:
+#     driver: bridge

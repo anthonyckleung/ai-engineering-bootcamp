@@ -1,13 +1,21 @@
 import streamlit as st
 import requests
+import uuid
 
 from src.chatbot_ui.core.config import settings
 
 st.set_page_config(
-    page_title="Ecommerce Assistant",
+    page_title="Fraud Analyst Assistant",
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+def get_session_id():
+    if 'session_id' not in st.session_state:
+        st.session_state.session_id = str(uuid.uuid4())
+    return st.session_state.session_id
+
+session_id = get_session_id()
 
 
 def api_call(method, url, **kwargs):
@@ -47,7 +55,7 @@ if "retrieved_items" not in st.session_state:
     st.session_state.retrieved_items = []
 
 if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "assistant", "content": "Hello! How can I assist you today?"}]
+    st.session_state.messages = [{"role": "analyst", "content": "Hello! How can I assist you today?"}]
 
 if "query_counter" not in st.session_state:
     st.session_state.query_counter = 0
@@ -92,7 +100,7 @@ if prompt := st.chat_input("Hello! How can I assist you today?"):
         st.markdown(prompt)
     
     with st.spinner("Thinking..."):
-        status, output = api_call("post", f"{settings.API_URL}/rag", json={"query": prompt})
+        status, output = api_call("post", f"{settings.API_URL}/rag", json={"query": prompt, "thread_id": session_id})
         # Update retrieved items
         # st.session_state.retrieved_items = output.get("used_image_urls", [])
         

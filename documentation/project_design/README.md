@@ -57,7 +57,11 @@ Source: https://www.kaggle.com/datasets/shivamb/real-or-fake-fake-jobposting-pre
 
 ## Performance Metrics & Evals
 
-**TBD**
+- Retrieval quality
+- End-to-End system performance (response time)
+- Final answer scoring
+- Task inference from user input
+- Reasoning steps, tool user, and final responses.
 
 ## Deployment & Integration
 
@@ -65,4 +69,6 @@ Source: https://www.kaggle.com/datasets/shivamb/real-or-fake-fake-jobposting-pre
 
 ## Timeline & Milestones
 
-**TBD**
+- RAG Prototyping - embedding models & vector DB 
+- Prompt engineering
+- Agentic system
