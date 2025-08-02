@@ -14,6 +14,7 @@ from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.postgres import PostgresSaver
 
 import logging
+import pprint
 
 # Basic logging configuration
 logging.basicConfig(
@@ -36,6 +37,7 @@ class State(BaseModel):
     # NEW fields for classifier integration
     retrieved_job_posting: Optional[str] = None            # stores the retrieved job posting text
     classification_result: Optional[Dict[str, Union[bool, float, str]]] = None  # store fraud classification result
+    trace_id: str = ""
 
 
 def tool_router(state: State) -> str:
@@ -83,6 +85,8 @@ workflow.add_edge("classifier_node", "agent_node")
 
 def run_agent(question: str, thread_id: str):
 
+    # logger.info("Tool descriptions:\n%s", pprint.pformat(tool_descriptions))
+
     initial_state = {
         "messages": [{"role": "user", "content": question}],
         "iteration": 0,
@@ -94,7 +98,7 @@ def run_agent(question: str, thread_id: str):
     graph = workflow.compile()
     result = graph.invoke(initial_state)
 
-    logger.info(config.POSTGRES_CONN_STRING)
+    # logger.info(config.POSTGRES_CONN_STRING)
 
     with PostgresSaver.from_conn_string(config.POSTGRES_CONN_STRING) as checkpointer:
         try:
@@ -114,7 +118,7 @@ def run_agent_wrapper(question: str, thread_id: str):
     qdrant_client = QdrantClient(url=config.QDRANT_URL)
 
     result = run_agent(question, thread_id)
-    logger.info(result.get("answer"))
+    # logger.info(result.get("answer"))
 
     # image_url_list = []
     # for id in result.get("retrieved_context_ids"):
@@ -129,5 +133,6 @@ def run_agent_wrapper(question: str, thread_id: str):
 
     return {
         "answer": result.get("answer"),
+        "trace_id": result.get("trace_id")
         # "retrieved_images": image_url_list
     }
