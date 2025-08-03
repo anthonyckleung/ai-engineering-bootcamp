@@ -63,6 +63,26 @@ services:
       - ./minio_data:/data
     restart: unless-stopped
 
+  items_mcp_server:
+    build:
+      context: .
+      dockerfile: Dockerfile.items_mcp
+    ports:
+      - 8001:8000
+    env_file:
+      - .env
+    restart: unless-stopped
+
+  classifier_mcp_server:
+    build:
+      context: .
+      dockerfile: Dockerfile.classifier_mcp
+    ports:
+      - 8002:8000
+    env_file:
+      - .env
+    restart: unless-stopped
+
   # minio-setup:
   #   image: quay.io/minio/mc
   #   depends_on:
