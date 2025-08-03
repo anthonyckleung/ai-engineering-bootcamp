@@ -1,6 +1,7 @@
 import yaml
 from jinja2 import Template
 from langsmith import Client
+from fastmcp import Client as FastMCPClient
 from typing import Dict, Any
 import ast
 import inspect
@@ -216,7 +217,78 @@ def lc_messages_to_regular_messages(msg):
     else:
 
         return {"role": "user", "content": str(msg)}
+
+
+async def mcp_tool_node(state) -> str:
+
+    tool_messages = []
+
+    for i, tc in enumerate(state.tool_calls):
+
+        client = Client(tc.server)
+
+        async with client:
+
+            result = await client.call_tool(tc.name, tc.arguments)
+
+            tool_message = ToolMessage(
+                content=result,
+                tool_call_id=f"call_{i}"
+            )
+
+            tool_messages.append(tool_message)
+
+    return {
+        "messages": tool_messages
+    }
+
+
+def lc_messages_to_regular_messages(msg):
+
+    if isinstance(msg, dict):
+        
+        if msg.get("role") == "user":
+            return {"role": "user", "content": msg["content"]}
+        elif msg.get("role") == "assistant":
+            return {"role": "assistant", "content": msg["content"]}
+        elif msg.get("role") == "tool":
+            return {
+                "role": "tool", 
+                "content": msg["content"], 
+                "tool_call_id": msg.get("tool_call_id")
+            }
+        
+    elif isinstance(msg, AIMessage):
+
+        result = {
+            "role": "assistant",
+            "content": msg.content
+        }
+        
+        if hasattr(msg, 'tool_calls') and msg.tool_calls and len(msg.tool_calls) > 0 and not msg.tool_calls[0].get("name").startswith("functions."):
+            result["tool_calls"] = [
+                {
+                    "id": tc["id"],
+                    "type": "function",
+                    "function": {
+                        "name": tc["name"].replace("functions.", ""),
+                        "arguments": json.dumps(tc["args"])
+                    }
+                }
+                for tc in msg.tool_calls
+            ]
+            
+        return result
     
+    elif isinstance(msg, ToolMessage):
+
+        return {"role": "tool", "content": msg.content, "tool_call_id": msg.tool_call_id}
+    
+    else:
+
+        return {"role": "user", "content": str(msg)}
+
+
 
 async def get_tool_descriptions_from_mcp_servers(mcp_servers: list[str]) -> list[dict]:
 
@@ -224,7 +296,7 @@ async def get_tool_descriptions_from_mcp_servers(mcp_servers: list[str]) -> list
 
     for server in mcp_servers:
 
-        client = Client(server)
+        client = FastMCPClient(server)
 
         async with client:
 
