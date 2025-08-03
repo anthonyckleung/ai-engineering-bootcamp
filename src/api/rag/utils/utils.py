@@ -216,3 +216,54 @@ def lc_messages_to_regular_messages(msg):
     else:
 
         return {"role": "user", "content": str(msg)}
+    
+
+async def get_tool_descriptions_from_mcp_servers(mcp_servers: list[str]) -> list[dict]:
+
+    tool_descriptions = []
+
+    for server in mcp_servers:
+
+        client = Client(server)
+
+        async with client:
+
+            tools = await client.list_tools()
+
+            for tool in tools:
+                
+                result = {
+                    "name": "",
+                    "description": "",
+                    "parameters": {"type": "object", "properties": {}},
+                    "required": [],
+                    "returns": {"type": "string", "description": ""},
+                    "server": server
+                }
+
+                result["name"] = tool.name
+                result["required"] = tool.inputSchema.get("required", [])
+
+                ## Get Description
+
+                description = tool.description.split("\n\n")[0]
+                result["description"] = description
+
+
+                ## Get Returns
+
+                returns = tool.description.split("Returns:")[1].strip()
+                result["returns"]["description"] = returns
+
+                ## Get parameters
+
+                property_descriptions = parse_docstring_params(tool.description)
+                properties = tool.inputSchema.get("properties", {})
+                for key, value in properties.items():
+                    properties[key]["description"] = property_descriptions.get(key, "")
+
+                result["parameters"]["properties"] = properties
+
+                tool_descriptions.append(result)
+
+    return tool_descriptions
