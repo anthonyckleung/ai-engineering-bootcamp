@@ -65,7 +65,7 @@ def retrieve_context(query, top_k=5):
     similarity_scores = []
 
     for result in results.points:
-        retrieved_context_ids.append(result.id)
+        retrieved_context_ids.append(result.payload['job_id'])
         retrieved_context.append(result.payload['text'])
         similarity_scores.append(result.score)
 

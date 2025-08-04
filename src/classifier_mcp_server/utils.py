@@ -69,6 +69,12 @@ def standardize_text(text):
     return text
 
 
+def format_classification_output(pred_label, pred_score):
+
+    formatted_result = f"classification result: is fradulent: {bool(pred_label)}, score: {pred_score}"
+    return formatted_result
+
+
 def job_description_classifier(model, vectorizer, input_text):
     nlp = spacy.load("en_core_web_sm", disable=["parser", "ner"])
     
