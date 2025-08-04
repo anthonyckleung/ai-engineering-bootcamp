@@ -20,7 +20,7 @@ async def rag(
     payload: RAGRequest
 ) -> RAGResponse:
     # logger.info(payload.query)
-    result = run_agent_wrapper(payload.query, payload.thread_id)
+    result = await run_agent_wrapper(payload.query, payload.thread_id)
     # used_image_urls = [RAGUsedImage(image_url=image["image_url"], price=image["price"], description=image["description"]) for image in result["retrieved_images"]]
 
     return RAGResponse(
