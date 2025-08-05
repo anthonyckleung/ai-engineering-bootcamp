@@ -1,11 +1,14 @@
 import yaml
 from jinja2 import Template
 from langsmith import Client
+from fastmcp import Client as FastMCPClient
 from typing import Dict, Any
 import ast
 import inspect
 import json
 import api.rag.tools as tools
+from pydantic import BaseModel, Field
+# from api.rag.agent import RAGUsedContext
 from langchain_core.messages import AIMessage, ToolMessage
 
 ls_client = Client()
@@ -216,3 +219,153 @@ def lc_messages_to_regular_messages(msg):
     else:
 
         return {"role": "user", "content": str(msg)}
+
+
+# async def mcp_tool_node(state) -> str:
+
+#     tool_messages = []
+
+#     for i, tc in enumerate(state.tool_calls):
+
+#         client = FastMCPClient(tc.server)
+
+#         async with client:
+
+#             result = await client.call_tool(tc.name, tc.arguments)
+
+#             tool_message = ToolMessage(
+#                 content=result,
+#                 tool_call_id=f"call_{i}"
+#             )
+
+#             tool_messages.append(tool_message)
+
+#     return {
+#         "messages": tool_messages
+#     }
+
+
+class RAGUsedContext(BaseModel):
+    id: int
+    description: str
+async def mcp_tool_node(state) -> dict:
+    tool_messages = []
+
+    for i, tc in enumerate(state.tool_calls):
+        client = FastMCPClient(tc.server)
+        async with client:
+            result = await client.call_tool(tc.name, tc.arguments)
+            # Parse the JSON text content
+            json_text = result.content[0].text
+            parsed = json.loads(json_text)
+            
+            # Here you can update state fields as needed,
+            # for example, save job postings when calling get_formatted_context
+            if tc.name == "get_formatted_context":
+                state.retrieved_job_posting = parsed.get("retrieved_job_posting")
+            #     state.retrieved_context_ids = [RAGUsedContext(id=i, description="") for i in parsed.get("retrieved_context_ids", [])]
+            
+            tool_message = ToolMessage(content=json_text, tool_call_id=f"call_{i}")
+            tool_messages.append(tool_message)
+
+    return {"messages": tool_messages, 
+            "retrieved_job_posting": state.retrieved_job_posting, 
+            "retrieved_context_ids": state.retrieved_context_ids
+            }
+
+def lc_messages_to_regular_messages(msg):
+
+    if isinstance(msg, dict):
+        
+        if msg.get("role") == "user":
+            return {"role": "user", "content": msg["content"]}
+        elif msg.get("role") == "assistant":
+            return {"role": "assistant", "content": msg["content"]}
+        elif msg.get("role") == "tool":
+            return {
+                "role": "tool", 
+                "content": msg["content"], 
+                "tool_call_id": msg.get("tool_call_id")
+            }
+        
+    elif isinstance(msg, AIMessage):
+
+        result = {
+            "role": "assistant",
+            "content": msg.content
+        }
+        
+        if hasattr(msg, 'tool_calls') and msg.tool_calls and len(msg.tool_calls) > 0 and not msg.tool_calls[0].get("name").startswith("functions."):
+            result["tool_calls"] = [
+                {
+                    "id": tc["id"],
+                    "type": "function",
+                    "function": {
+                        "name": tc["name"].replace("functions.", ""),
+                        "arguments": json.dumps(tc["args"])
+                    }
+                }
+                for tc in msg.tool_calls
+            ]
+            
+        return result
+    
+    elif isinstance(msg, ToolMessage):
+
+        return {"role": "tool", "content": msg.content, "tool_call_id": msg.tool_call_id}
+    
+    else:
+
+        return {"role": "user", "content": str(msg)}
+
+
+
+async def get_tool_descriptions_from_mcp_servers(mcp_servers: list[str]) -> list[dict]:
+
+    tool_descriptions = []
+
+    for server in mcp_servers:
+
+        client = FastMCPClient(server)
+
+        async with client:
+
+            tools = await client.list_tools()
+
+            for tool in tools:
+                
+                result = {
+                    "name": "",
+                    "description": "",
+                    "parameters": {"type": "object", "properties": {}},
+                    "required": [],
+                    "returns": {"type": "object", "description": ""},
+                    "server": server
+                }
+
+                result["name"] = tool.name
+                result["required"] = tool.inputSchema.get("required", [])
+
+                ## Get Description
+
+                description = tool.description.split("\n\n")[0]
+                result["description"] = description
+
+
+                ## Get Returns
+
+                returns = tool.description.split("Returns:")[1].strip()
+                result["returns"]["description"] = returns
+
+                ## Get parameters
+
+                property_descriptions = parse_docstring_params(tool.description)
+                properties = tool.inputSchema.get("properties", {})
+                for key, value in properties.items():
+                    properties[key]["description"] = property_descriptions.get(key, "")
+
+                result["parameters"]["properties"] = properties
+
+                tool_descriptions.append(result)
+
+    return tool_descriptions

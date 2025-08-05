@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List
 import instructor
+from instructor.exceptions import InstructorRetryException
 from openai import OpenAI
 from langsmith import traceable, get_current_run_tree
 from langchain_core.messages import AIMessage
@@ -8,15 +9,28 @@ from langchain_core.messages import AIMessage
 from api.rag.utils.utils import lc_messages_to_regular_messages
 from api.rag.utils.utils import prompt_template_config
 from api.core.config import config
-
+import json
 
 from jinja2 import Template
+
+import logging
+import pprint
+
+# Basic logging configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
+logger = logging.getLogger("app")
 
 client = instructor.from_openai(OpenAI(api_key=config.OPENAI_API_KEY))
 
 class ToolCall(BaseModel):
     name: str
     arguments: dict
+    server: str
 
 class RAGUsedContext(BaseModel):
     id: int
@@ -36,51 +50,7 @@ class AgentResponse(BaseModel):
 )
 def agent_node(state):
 
-    # prompt_template = prompt_template_config(config.RAG_PROMPT_TEMPLATE_PATH, "rag_generation")
-
-    prompt_template =  """You are a Fraud Analyst Assistant. The user is a Fraud Analyst and your job is to determine whether a job posting is real or fraudulent. 
-        Use your knowledge of common fraud indicators, best practices for job verification, and any relevant information you can retrieve to support your answer.
-        Always explain your reasoning and provide actionable advice. 
-
-        User may provide either the full job posting text, job title, or a job ID. 
-
-        If a job ID is provided, retrieve the corresponding job posting details before analysis.
-
-You will be given a question and a list of tools you can use to answer that question.
-
-If the user specifically requests classification on a job posting to tell if it is real or fake, 
-you should first retrieve the posting using the `get_formatted_context` tool if you haven't already, 
-then call the `get_prediction` to classify it.
-
-<Available tools>
-{{ available_tools | tojson }}
-</Available tools>
-
-When calling tools, always use:
-
-<tool_call>
-{"name": "tool_name", "arguments": {...}}
-</tool_call>
-
-Use names specifically provided in the available tools. Don't add any additional text to the names.
-
-You should tend to use tools when additional information is needed to answer the question.
-
-If you set final_answer to True, you should not use any tools.
-
-If you have already retrieved a job posting and need to assess if it's fraudulent, you should use the `get_prediction` tool.
-
-
-Instructions:
-   1. Carefully analyze the provided job details and user input above.
-   2. Use up-to-date information about job scams, legitimate job ad characteristics, and known fraud patterns.
-   3. Provide a clear verdict: "Likely Real", "Likely Fraudulent", or "Uncertain".
-   4. Explain your reasoning with specific evidence from the posting, user input, and all retrieved information.
-   5. List any red flags or positive signs you identified.
-   6. Offer actionable advice to the user.
-"""
-
-    prompt_template = Template(prompt_template)
+    prompt_template = prompt_template_config(config.RAG_PROMPT_TEMPLATE_PATH, "rag_generation")
 
     prompt = prompt_template.render(
         available_tools=state.available_tools
@@ -92,6 +62,11 @@ Instructions:
 
     for msg in messages:
         conversation.append(lc_messages_to_regular_messages(msg))
+
+    print("[DEBUG] Conversation:", conversation)
+    client = instructor.from_openai(OpenAI())
+
+    # print("[DEBUG] Prompt: ", prompt)
 
     response, raw_response = client.chat.completions.create_with_completion(
         model="gpt-4.1-mini",
@@ -107,24 +82,28 @@ Instructions:
             "output_tokens": raw_response.usage.completion_tokens,
             "total_tokens": raw_response.usage.total_tokens,
         }
+        trace_id = str(getattr(current_run, "trace_id", current_run.id))
 
     if response.tool_calls and not response.final_answer:
-        tool_calls = []
-        for i, tc in enumerate(response.tool_calls):
-            tool_calls.append({
+       tool_calls = []
+       for i, tc in enumerate(response.tool_calls):
+          tool_calls.append({
                 "id": f"call_{i}",
                 "name": tc.name,
                 "args": tc.arguments
-            })
+          })
 
-        ai_message = AIMessage(
-            content=response.answer,
-            tool_calls=tool_calls
-            )
+       ai_message = AIMessage(
+          content=response.answer,
+          tool_calls=tool_calls
+          )
     else:
-        ai_message = AIMessage(
-            content=response.answer,
-        )
+       ai_message = AIMessage(
+          content=response.answer,
+       )
+    # Prepare tool calls for AIMessage
+
+    # print("[DEBUG] tool_calls so far:",  response.tool_calls)
 
     return {
         "messages": [ai_message],
@@ -132,5 +111,6 @@ Instructions:
         "iteration": state.iteration + 1,
         "answer": response.answer,
         "final_answer": response.final_answer,
-        "retrieved_context_ids": response.retrieved_context_ids
+        "retrieved_context_ids": response.retrieved_context_ids,
+        "trace_id": trace_id
     }
