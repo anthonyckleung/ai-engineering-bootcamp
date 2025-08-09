@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Annotated, Optional, Union
 from operator import add
 
-from api.rag.agent import ToolCall, RAGUsedContext, agent_node
+from api.rag.agents import ToolCall, RAGUsedContext, intent_router_agent_node, job_posting_qa_agent_node
 from api.rag.utils.utils import get_tool_descriptions_from_node, mcp_tool_node, get_tool_descriptions_from_mcp_servers
 # from api.rag.tools import get_formatted_context, get_prediction
 from api.core.config import config
@@ -38,8 +38,10 @@ class State(BaseModel):
     retrieved_job_posting: Optional[str] = ""            # stores the retrieved job posting text
     classification_result: Optional[Dict[str, Union[bool, float, str]]] = None  # store fraud classification result
     trace_id: str = ""
+    user_intent: str = ""
 
 
+#### ROUTERS
 def tool_router(state: State) -> str:
     """Decide whether to continue or end"""
     
@@ -51,34 +53,29 @@ def tool_router(state: State) -> str:
         return "tools"
     else:
         return "end"
-
-
-# tools = [get_formatted_context, get_prediction]
-# tool_node = ToolNode(tools)
-# classifier_node = ToolNode([get_prediction])
-# tool_descriptions = get_tool_descriptions_from_node(tool_node)
-
-# tool_descriptions = await get_tool_descriptions_from_mcp_servers(mcp_servers)
-
+    
+def user_intent_router(state) -> str:
+    if state.user_intent == "job_posting_qa":
+        return "job_posting_qa_agent"
+    else:
+        return "end"
 
 
 workflow = StateGraph(State)
-workflow.add_node("agent_node", agent_node)
+workflow.add_edge(START, "intent_router_agent_node")
+
+workflow.add_node("intent_router_agent_node", intent_router_agent_node)
+workflow.add_node("agent_node", job_posting_qa_agent_node)
 workflow.add_node("mcp_tool_node", mcp_tool_node)
-# workflow.add_node("tool_node", tool_node)
-# workflow.add_node("classifier_node", classifier_node)
 
-workflow.add_edge(START, "agent_node")
-
-# workflow.add_conditional_edges(
-#     "agent_node",
-#     tool_router,
-#     {
-#         "tools": "tool_node",
-#         "classifier_node": "classifier_node",
-#         "end": END,
-#     }
-# )
+workflow.add_conditional_edges(
+    "intent_router_agent_node",
+    user_intent_router,
+    {
+        "job_posting_qa_agent": "agent_node",
+        "end": END
+    }
+)
 
 workflow.add_conditional_edges(
     "agent_node",
@@ -89,8 +86,6 @@ workflow.add_conditional_edges(
     }
 )
 workflow.add_edge("mcp_tool_node", "agent_node")
-# workflow.add_edge("tool_node", "agent_node")
-# workflow.add_edge("classifier_node", "agent_node")
 
 
 async def run_agent(question: str, thread_id: str):
@@ -131,7 +126,7 @@ async def run_agent_wrapper(question: str, thread_id: str):
     # logger.info(result.get("answer"))
 
     # image_url_list = []
-    # for id in result.get("retrieved_context_ids"):
+    # for id in result.get("retrieved_context_ids", []):
     #     payload = qdrant_client.retrieve(
     #         collection_name=config.QDRANT_COLLECTION_NAME,
     #         ids=[id.id]
