@@ -6,7 +6,7 @@ mcp = FastMCP("items")
 
 
 @mcp.tool()
-def get_formatted_context(query: str, top_k: int = 5) -> Dict[str, Any]:
+def get_formatted_context(query: str, top_k: int = 5) -> str:
 
     """Get the top k context, each representing an job posting for a given query.
     
@@ -19,9 +19,9 @@ def get_formatted_context(query: str, top_k: int = 5) -> Dict[str, Any]:
     """
 
     context = retrieve_context(query, top_k)
-    # formatted_context = process_context(context)
+    formatted_context = process_context(context)
 
-    return context
+    return formatted_context
 
 
 if __name__ == "__main__":
