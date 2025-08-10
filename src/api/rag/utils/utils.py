@@ -10,6 +10,13 @@ import api.rag.tools as tools
 from pydantic import BaseModel, Field
 # from api.rag.agent import RAGUsedContext
 from langchain_core.messages import AIMessage, ToolMessage
+import logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("app")
 
 ls_client = Client()
 
@@ -248,6 +255,7 @@ def lc_messages_to_regular_messages(msg):
 class RAGUsedContext(BaseModel):
     id: int
     description: str
+
 async def mcp_tool_node(state) -> dict:
     tool_messages = []
 
@@ -255,22 +263,11 @@ async def mcp_tool_node(state) -> dict:
         client = FastMCPClient(tc.server)
         async with client:
             result = await client.call_tool(tc.name, tc.arguments)
-            # Parse the JSON text content
-            json_text = result.content[0].text
-            parsed = json.loads(json_text)
-            
-            # Here you can update state fields as needed,
-            # for example, save job postings when calling get_formatted_context
-            if tc.name == "get_formatted_context":
-                state.retrieved_job_posting = parsed.get("retrieved_job_posting")
-            #     state.retrieved_context_ids = [RAGUsedContext(id=i, description="") for i in parsed.get("retrieved_context_ids", [])]
-            
-            tool_message = ToolMessage(content=json_text, tool_call_id=f"call_{i}")
+
+            tool_message = ToolMessage(content=result, tool_call_id=f"call_{i}")
             tool_messages.append(tool_message)
 
     return {"messages": tool_messages, 
-            "retrieved_job_posting": state.retrieved_job_posting, 
-            "retrieved_context_ids": state.retrieved_context_ids
             }
 
 def lc_messages_to_regular_messages(msg):
@@ -339,7 +336,7 @@ async def get_tool_descriptions_from_mcp_servers(mcp_servers: list[str]) -> list
                     "description": "",
                     "parameters": {"type": "object", "properties": {}},
                     "required": [],
-                    "returns": {"type": "object", "description": ""},
+                    "returns": {"type": "str", "description": ""},
                     "server": server
                 }
 
@@ -369,3 +366,32 @@ async def get_tool_descriptions_from_mcp_servers(mcp_servers: list[str]) -> list
                 tool_descriptions.append(result)
 
     return tool_descriptions
+
+
+async def qa_mcp_tool_node(state) -> dict:
+    tool_messages = []
+
+    for i, tc in enumerate(state.qa_tool_calls):
+        client = FastMCPClient(tc.server)
+        async with client:
+            result = await client.call_tool(tc.name, tc.arguments)
+
+            tool_message = ToolMessage(content=result, tool_call_id=f"call_{i}")
+            tool_messages.append(tool_message)
+    return {"messages": tool_messages, 
+            }
+
+
+async def classifier_mcp_tool_node(state) -> dict:
+    tool_messages = []
+
+    for i, tc in enumerate(state.classifier_tool_calls):
+        client = FastMCPClient(tc.server)
+        async with client:
+            result = await client.call_tool(tc.name, tc.arguments)
+
+            tool_message = ToolMessage(content=result, tool_call_id=f"call_{i}")
+            tool_messages.append(tool_message)
+    return {"messages": tool_messages, 
+
+            }
