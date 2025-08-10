@@ -1,17 +1,17 @@
 services:
-  # streamlit-app:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.streamlit
-  #   ports:
-  #     - 8501:8501
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     - HOME=/app
-  #   restart: unless-stopped
-  #   volumes:
-  #     - ./src/chatbot_ui:/app/src/chatbot_ui
+  streamlit-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    ports:
+      - 8501:8501
+    env_file:
+      - .env
+    environment:
+      - HOME=/app
+    restart: unless-stopped
+    volumes:
+      - ./src/chatbot_ui:/app/src/chatbot_ui
 
   qdrant:
     image: qdrant/qdrant
@@ -22,31 +22,31 @@ services:
       - ./qdrant_storage:/qdrant/storage:z
     restart: unless-stopped
 
-  # api:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.fastapi
-  #   ports:
-  #     - 8000:8000
-  #   env_file:
-  #     - .env
-  #   restart: unless-stopped
-  #   volumes:
-  #     - ./src/api:/app/src/api
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.fastapi
+    ports:
+      - 8000:8000
+    env_file:
+      - .env
+    restart: unless-stopped
+    volumes:
+      - ./src/api:/app/src/api
 
-  # postgres:
-  #   image: postgres:16-alpine
-  #   ports:
-  #     - 5433:5432
-  #   environment:
-  #     POSTGRES_DB: postgresdb
-  #     POSTGRES_USER: postgres
-  #     POSTGRES_PASSWORD: postgres_password
-  #     PGDATA: /var/lib/postgresql/data/pgdata
-  #   restart: unless-stopped
-  #   volumes:
-  #     - ./postgres_data:/var/lib/postgresql/data
-  #     - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_DB: postgresdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    restart: unless-stopped
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
 
   minio:
     image: quay.io/minio/minio

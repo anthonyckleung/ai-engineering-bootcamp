@@ -26,9 +26,9 @@ RUN python -m compileall ./src/api
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Create non-root user and set permissions
-# RUN addgroup --system app && \
-#     adduser --system --ingroup app app && \
-#     chown -R app:app /app
+RUN addgroup --system app && \
+    adduser --system --ingroup app app && \
+    chown -R app:app /app
 # RUN apt-get update && apt-get install -y gcc g++ build-essential
 # RUN python3 -m ensurepip --upgrade
 # RUN python3 -m pip install --upgrade pip setuptools wheel
