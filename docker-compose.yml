@@ -83,6 +83,16 @@ services:
       - .env
     restart: unless-stopped
 
+  entities_mcp_server:
+    build:
+      context: .
+      dockerfile: Dockerfile.entities_mcp
+    ports:
+      - 8003:8000
+    env_file:
+      - .env
+    restart: unless-stopped
+
   # minio-setup:
   #   image: quay.io/minio/mc
   #   depends_on:

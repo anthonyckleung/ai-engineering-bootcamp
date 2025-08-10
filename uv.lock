@@ -24,6 +24,7 @@ dependencies = [
     { name = "langgraph-checkpoint-postgres" },
     { name = "langgraph-prebuilt" },
     { name = "langsmith" },
+    { name = "language-tool-python" },
     { name = "matplotlib" },
     { name = "mcp", extra = ["cli"] },
     { name = "minio" },
@@ -43,6 +44,7 @@ dependencies = [
     { name = "seaborn" },
     { name = "spacy" },
     { name = "streamlit" },
+    { name = "textblob" },
     { name = "uvicorn" },
 ]
 
@@ -61,6 +63,7 @@ requires-dist = [
     { name = "langgraph-checkpoint-postgres", specifier = ">=2.0.23" },
     { name = "langgraph-prebuilt", specifier = ">=0.5.2" },
     { name = "langsmith", specifier = ">=0.4.4" },
+    { name = "language-tool-python", specifier = ">=2.9.4" },
     { name = "matplotlib", specifier = ">=3.10.3" },
     { name = "mcp", extras = ["cli"], specifier = ">=1.12.3" },
     { name = "minio", specifier = ">=7.2.16" },
@@ -80,6 +83,7 @@ requires-dist = [
     { name = "seaborn", specifier = ">=0.13.2" },
     { name = "spacy", specifier = ">=3.8.7" },
     { name = "streamlit", specifier = ">=1.46.0" },
+    { name = "textblob", specifier = ">=0.19.0" },
     { name = "uvicorn", specifier = ">=0.35.0" },
 ]
 
@@ -1887,6 +1891,21 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/dd/ce/3f144716a9f2cbf42aa86ebc8b085a184be25c80aa453eea17c294d239c1/language_data-1.3.0.tar.gz", hash = "sha256:7600ef8aa39555145d06c89f0c324bf7dab834ea0b0a439d8243762e3ebad7ec", size = 5129310, upload-time = "2024-11-19T10:21:37.912Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5d/e9/5a5ffd9b286db82be70d677d0a91e4d58f7912bb8dd026ddeeb4abe70679/language_data-1.3.0-py3-none-any.whl", hash = "sha256:e2ee943551b5ae5f89cd0e801d1fc3835bb0ef5b7e9c3a4e8e17b2b214548fbf", size = 5385760, upload-time = "2024-11-19T10:21:36.005Z" },
+]
+
+[[package]]
+name = "language-tool-python"
+version = "2.9.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "psutil" },
+    { name = "requests" },
+    { name = "toml" },
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/67/ae/a69f4dd0f6c1f797187ea84216e1b9e27edb452f4024b00a63348de2cf54/language_tool_python-2.9.4.tar.gz", hash = "sha256:a3a97014ffb5db1d8bedabd48feb26e8d3a5fe719152d7f873056fa0202d05c9", size = 72612, upload-time = "2025-06-03T19:19:10.315Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3a/02/1fc1cd6bfbdaddb31f6466eb9db9aacee30b37cd39ff9b067d34ca20a51a/language_tool_python-2.9.4-py3-none-any.whl", hash = "sha256:0496a0420f5f2e6404f5d7939e24f46ea6c0e3fce90313e6bd0507b5e918cba7", size = 55578, upload-time = "2025-06-03T19:19:08.856Z" },
 ]
 
 [[package]]
@@ -3994,6 +4013,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/a3/4d/6a19536c50b849338fcbe9290d562b52cbdcf30d8963d3588a68a4107df1/tenacity-8.5.0.tar.gz", hash = "sha256:8bc6c0c8a09b31e6cad13c47afbed1a567518250a9a171418582ed8d9c20ca78", size = 47309, upload-time = "2024-07-05T07:25:31.836Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d2/3f/8ba87d9e287b9d385a02a7114ddcef61b26f86411e121c9003eb509a1773/tenacity-8.5.0-py3-none-any.whl", hash = "sha256:b594c2a5945830c267ce6b79a166228323ed52718f30302c1359836112346687", size = 28165, upload-time = "2024-07-05T07:25:29.591Z" },
+]
+
+[[package]]
+name = "textblob"
+version = "0.19.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "nltk" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/63/a1/31fc6a5e9e46f2d84f72f12048588feac5464486e526dbfcc4719569cd3e/textblob-0.19.0.tar.gz", hash = "sha256:0a3d06a47cf7759441da3418c4843aed3797a998beba2108c6245a2020f83b01", size = 637872, upload-time = "2025-01-13T23:03:07.352Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1e/d6/40aa5aead775582ea0cf35870e5a3f16fab4b967f1ad2debe675f673f923/textblob-0.19.0-py3-none-any.whl", hash = "sha256:af6b8827886f1ee839a625f4865e5abb1584eae8db2259627b33a6a0b02ef19d", size = 624280, upload-time = "2025-01-13T23:03:01.034Z" },
 ]
 
 [[package]]

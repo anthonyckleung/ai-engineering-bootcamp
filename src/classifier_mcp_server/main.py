@@ -25,23 +25,24 @@ MODEL = pickle.loads(obj_bytes)
 
 
 @mcp.tool()
-def get_prediction(text:str) -> Dict[str, Any]:
+def get_prediction(text:str) -> str:
     """Classifies if a given job posting is real or fake.
-    Uses the top retrieved job posting from get_formatted_context as input
+    Uses the top result from get_formatted_context as input
     and return the classification result.
 
     Args:
         text: Input string of the job posting
     
     Returns:
-        A dictionary of the classification label and prediction probability score.
+        A string of the classification label and score.
     """
     if not text:
         return "classification_result: error - Missing job description"
 
     prediction_result = job_description_classifier(MODEL, COUNT_VECTORIZER, text)
-    # formatted_result = format_classification_output(prediction_result['is_fraud'], prediction_result['probability'])
-    return prediction_result
+    formatted_result = format_classification_output(prediction_result['is_fraud'], prediction_result['probability'])
+    # return prediction_result
+    return formatted_result
 
 
 if __name__ == "__main__":
