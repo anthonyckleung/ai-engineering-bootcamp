@@ -48,22 +48,28 @@ class ClassifierAgentResponse(BaseModel):
     final_answer: bool = Field(default=False)
     retrieved_context_ids: List[RAGUsedContext]
 
-class IntentRouterAgentResponse(BaseModel):
-    user_intent: str
-    answer: str 
+class Delegation(BaseModel):
+    agent: str
+    task: str = Field(default="")
+
+class CoordinatorAgentResponse(BaseModel):
+    next_agent: str
+    plan: list[Delegation]
+    final_answer: bool = Field(default=False)
+    answer: str
 
 
-### User Intent Router Node
+### Coordinator Router Node
 
 
 @traceable(
-    name="intent_router_agent",
+    name="coordinator_agent",
     run_type="llm",
     metadata={"ls_provider": "openai", "ls_model_name": "gpt-4.1"}
 )
-def intent_router_agent_node(state) -> dict:
+def coordinator_agent_node(state) -> dict:
 
-    prompt_template = prompt_template_config(config.RAG_PROMPT_TEMPLATE_PATH, "intent_router_agent")
+    prompt_template = prompt_template_config(config.RAG_PROMPT_TEMPLATE_PATH, "coordinator_agent")
 
     prompt = prompt_template.render()
     #    print("[DEBUG] Agent State: ", state.model_dump_json)
@@ -79,7 +85,7 @@ def intent_router_agent_node(state) -> dict:
     try:
         response, raw_response = client.chat.completions.create_with_completion(
             model="gpt-4.1",
-            response_model=IntentRouterAgentResponse,
+            response_model=CoordinatorAgentResponse,
             messages=[{"role": "system", "content": prompt}, *conversation],
             temperature=0.,
         )
@@ -99,17 +105,20 @@ def intent_router_agent_node(state) -> dict:
     # logger.info(f"Trace id from Intent Agent: {trace_id}")
 
 
-    if (response.user_intent == "job_posting_qa") or (response.user_intent == "classify_posting"):
-        ai_message = []
-    else:
+    if response.final_answer:
         ai_message = [AIMessage(
-        content=response.answer,
-    )]
+            content=response.answer,
+        )]
+    else:
+        ai_message = []
 
     return {
         "messages": ai_message,
         "answer": response.answer,
-        "user_intent": response.user_intent,
+        "next_agent": response.next_agent,
+        "plan": response.plan,
+        "coordinator_final_answer": response.final_answer,
+        "coordinator_iteration": state.coordinator_iteration + 1,
         "trace_id": trace_id
     }
 
@@ -185,7 +194,7 @@ def job_posting_qa_agent_node(state):
         "qa_tool_calls": response.tool_calls,
         "iteration": state.iteration + 1,
         "answer": response.answer,
-        "final_answer": response.final_answer,
+        "job_posting_qa_final_answer": response.final_answer,
         "retrieved_context_ids": response.retrieved_context_ids,
         "trace_id": trace_id
     }
@@ -272,7 +281,7 @@ def classifier_agent_node(state) -> dict:
         "classifier_tool_calls": response.tool_calls,
         "classifier_iteration": state.classifier_iteration + 1,
         "answer": response.answer,
-        "final_answer": response.final_answer,
+        "classifier_final_answer": response.final_answer,
         "retrieved_context_ids": response.retrieved_context_ids,
         "trace_id": trace_id
     }

@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Annotated, Optional, Union
 from operator import add
 
-from api.rag.agents import ToolCall, RAGUsedContext, intent_router_agent_node, job_posting_qa_agent_node, classifier_agent_node
+from api.rag.agents import ToolCall, RAGUsedContext, Delegation, coordinator_agent_node, job_posting_qa_agent_node, classifier_agent_node
 from api.rag.utils.utils import get_tool_descriptions_from_mcp_servers, qa_mcp_tool_node, classifier_mcp_tool_node
 # from api.rag.tools import get_formatted_context, get_prediction
 from api.core.config import config
@@ -31,7 +31,10 @@ class State(BaseModel):
     answer: str = ""
     iteration: int = Field(default=0)
     classifier_iteration: int = Field(default=0)
-    final_answer: bool = Field(default=False)
+    coordinator_iteration: int = Field(default=0)
+    job_posting_qa_final_answer: bool = Field(default=False)
+    classifier_final_answer: bool = Field(default=False)
+    coordinator_final_answer: bool = Field(default=False)
     qa_available_tools: List[Dict[str, Any]] = []
     classifier_available_tools: List[Dict[str, Any]] = []
     qa_tool_calls: Optional[List[ToolCall]] = Field(default_factory=list)
@@ -41,33 +44,45 @@ class State(BaseModel):
     # retrieved_job_posting: Optional[str] = ""            # stores the retrieved job posting text
     classification_result: str = ""  # store fraud classification result
     user_intent: str = ""
+    plan: list[Delegation] = Field(default_factory=list)
+    next_agent: str = ""
     trace_id: str = ""
 
 
 #### ROUTERS
 def tool_router(state: State) -> str:
     """Decide whether to continue or end"""
-    if state.final_answer:
+    print("[DEBUG] State:", state)
+    print("State, iteration: ", state.iteration)
+    if state.job_posting_qa_final_answer:
         return "end"
-    elif state.iteration > 2:
+    elif state.iteration > 3:
         return "end"
     elif len(state.qa_tool_calls) > 0:
         return "tools"
     else:
         return "end"
     
-def user_intent_router(state: State) -> str:
-    if state.user_intent == "job_posting_qa":
+def coordinator_router(state) -> str:
+    """Decide whether to continue or end"""
+    
+    if state.coordinator_final_answer:
+        return "end"
+    elif state.coordinator_iteration > 6:
+        return "end"
+    elif state.next_agent == "job_posting_qa_agent":
         return "job_posting_qa_agent"
-    elif state.user_intent == "classify_posting":
+    elif state.next_agent == "classifier_agent":
         return "classifier_agent"
     else:
         return "end"
     
 def classifier_router(state: State) -> str:
-    if state.final_answer:
+    print("[DEBUG] State:", state)
+    print("State, iteration: ", state.classifier_iteration)
+    if state.classifier_final_answer:
         return "end"
-    elif state.classifier_iteration > 2:
+    elif state.classifier_iteration > 4:
         return "end"
     elif len(state.classifier_tool_calls) > 0:
         return "tools"
@@ -78,9 +93,9 @@ def classifier_router(state: State) -> str:
 workflow = StateGraph(State)
 
 
-workflow.add_edge(START, "intent_router_agent_node")
+workflow.add_edge(START, "coordinator_agent_node")
 
-workflow.add_node("intent_router_agent_node", intent_router_agent_node)
+workflow.add_node("coordinator_agent_node", coordinator_agent_node)
 workflow.add_node("classifier_agent_node", classifier_agent_node)
 workflow.add_node("agent_node", job_posting_qa_agent_node)
 
@@ -89,8 +104,8 @@ workflow.add_node("classifier_mcp_tool_node", classifier_mcp_tool_node)
 
 
 workflow.add_conditional_edges(
-    "intent_router_agent_node",
-    user_intent_router,
+    "coordinator_agent_node",
+    coordinator_router,
     {
         "job_posting_qa_agent": "agent_node",
         "classifier_agent": "classifier_agent_node",
@@ -103,7 +118,7 @@ workflow.add_conditional_edges(
     tool_router,
     {
         "tools": "qa_mcp_tool_node",
-        "end": END
+        "end": "coordinator_agent_node"
     }
 )
 
@@ -112,7 +127,7 @@ workflow.add_conditional_edges(
     classifier_router,
     {
         "tools": "classifier_mcp_tool_node",
-        "end": END
+        "end": "coordinator_agent_node"
     }
 )
 
