@@ -19,6 +19,7 @@ dependencies = [
     "langgraph-prebuilt>=0.5.2",
     "langsmith>=0.4.4",
     "language-tool-python>=2.9.4",
+    "litellm>=1.75.7",
     "matplotlib>=3.10.3",
     "mcp[cli]>=1.12.3",
     "minio>=7.2.16",

@@ -6,7 +6,7 @@ from typing import Dict, Any
 import ast
 import inspect
 import json
-import api.rag.tools as tools
+# import api.rag.tools as tools
 from pydantic import BaseModel, Field
 # from api.rag.agent import RAGUsedContext
 from langchain_core.messages import AIMessage, ToolMessage
@@ -40,6 +40,32 @@ def prompt_template_registry(prompt_name):
     template = Template(template_content)
 
     return template
+
+def format_ai_message (response):
+
+    if response.final_answer:
+        ai_message = AIMessage(
+            content=response.answer,
+        )
+    elif response.tool_calls:
+        tool_calls = []
+        for i, tc in enumerate(response.tool_calls):
+            tool_calls.append({
+                "id": f"call_{i}",
+                "name": tc.name,
+                "args": tc.arguments
+            })
+
+        ai_message = AIMessage(
+            content=response.answer,
+            tool_calls=tool_calls
+            )
+    else:
+        ai_message = AIMessage(
+            content=response.answer,
+        )
+
+    return ai_message
 
 
 #### TOOL DESCRIPTION PARSING ####
