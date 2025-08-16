@@ -1,12 +1,12 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List
 import instructor
-from instructor.exceptions import InstructorRetryException
+from litellm import completion
 from openai import OpenAI
 from langsmith import traceable, get_current_run_tree
 from langchain_core.messages import AIMessage
 
-from api.rag.utils.utils import lc_messages_to_regular_messages
+from api.rag.utils.utils import lc_messages_to_regular_messages, format_ai_message
 from api.rag.utils.utils import prompt_template_config
 from api.core.config import config
 import json
@@ -14,7 +14,9 @@ import json
 from jinja2 import Template
 
 import logging
-import pprint
+
+# client = instructor.from_openai(OpenAI(api_key=config.OPENAI_API_KEY))
+client = instructor.from_litellm(completion)
 
 # Basic logging configuration
 logging.basicConfig(
@@ -25,12 +27,12 @@ logging.basicConfig(
 
 logger = logging.getLogger("app")
 
-client = instructor.from_openai(OpenAI(api_key=config.OPENAI_API_KEY))
+
 
 class ToolCall(BaseModel):
     name: str
     arguments: dict = Field(alias="parameters")
-    server: Optional[str] = ""
+    server: str
 
 class RAGUsedContext(BaseModel):
     id: int
@@ -67,11 +69,15 @@ class CoordinatorAgentResponse(BaseModel):
     run_type="llm",
     metadata={"ls_provider": "openai", "ls_model_name": "gpt-4.1"}
 )
-def coordinator_agent_node(state) -> dict:
+def coordinator_agent_node(state, models = ["gpt-4.1", "gpt-4.1-mini"]) :
 
-    prompt_template = prompt_template_config(config.RAG_PROMPT_TEMPLATE_PATH, "coordinator_agent")
+    prompts = {}
 
-    prompt = prompt_template.render()
+    for model in models:
+        prompt_template = prompt_template_config(config.COORDINATOR_AGENT_PROMPT_TEMPLATE_PATH, model)
+        prompt = prompt_template.render()
+        prompts[model] = prompt
+
     #    print("[DEBUG] Agent State: ", state.model_dump_json)
     messages = state.messages
 
@@ -80,18 +86,20 @@ def coordinator_agent_node(state) -> dict:
     for msg in messages:
         conversation.append(lc_messages_to_regular_messages(msg))
 
-    client = instructor.from_openai(OpenAI())
 
-    try:
-        response, raw_response = client.chat.completions.create_with_completion(
-            model="gpt-4.1",
-            response_model=CoordinatorAgentResponse,
-            messages=[{"role": "system", "content": prompt}, *conversation],
-            temperature=0.,
-        )
-    except InstructorRetryException as ire:
-        print("Raw LLM output that caused error:", ire.last_completion)
-        raise  # or handle as needed
+    for model in models:
+        try:
+            print(f"[DEBUG] model: {model}")
+            response, raw_response = client.chat.completions.create_with_completion(
+                model=model,
+                response_model=CoordinatorAgentResponse,
+                messages=[{"role": "system", "content": prompts[model]}, *conversation],
+                temperature=0,
+            )
+            break
+        except Exception as e:
+            print(f"Error with model {model}: {e}")
+            continue
 
     current_run = get_current_run_tree()
     if current_run:
@@ -128,13 +136,14 @@ def coordinator_agent_node(state) -> dict:
     run_type="llm",
     metadata={"ls_provider": config.GENERATION_MODEL_PROVIDER, "ls_model_name": config.GENERATION_MODEL}
 )
-def job_posting_qa_agent_node(state):
+def job_posting_qa_agent_node(state, models = ["gpt-4.1", "gpt-4.1-mini"]):
 
-    prompt_template = prompt_template_config(config.RAG_PROMPT_TEMPLATE_PATH, "job_posting_qa_agent")
+    prompts = {}
 
-    prompt = prompt_template.render(
-        available_tools=state.qa_available_tools
-    )
+    for model in models:
+        prompt_template = prompt_template_config(config.JOB_POSTING_QA_AGENT_PROMPT_TEMPLATE_PATH, model)
+        prompt = prompt_template.render(available_tools=state.qa_available_tools)
+        prompts[model] = prompt
 
     messages = state.messages
     conversation = []
@@ -142,15 +151,18 @@ def job_posting_qa_agent_node(state):
     for msg in messages:
         conversation.append(lc_messages_to_regular_messages(msg))
 
-    client = instructor.from_openai(OpenAI())
-
-
-    response, raw_response = client.chat.completions.create_with_completion(
-        model="gpt-4.1",
-        response_model=JobPostQAResponse,
-        messages=[{"role": "system", "content": prompt}, *conversation],
-        temperature=0.,
-    )
+    for model in models:
+        try:
+            response, raw_response = client.chat.completions.create_with_completion(
+                model=model,
+                response_model=JobPostQAResponse,
+                messages=[{"role": "system", "content": prompts[model]}, *conversation],
+                temperature=0,
+            )
+            break
+        except Exception as e:
+            print(f"Error with model {model}: {e}")
+            continue
 
     logger.info(f"[DEBUG] Raw response from QA Agent: {raw_response}")
 
@@ -161,7 +173,7 @@ def job_posting_qa_agent_node(state):
             "output_tokens": raw_response.usage.completion_tokens,
             "total_tokens": raw_response.usage.total_tokens,
         }
-        trace_id = str(getattr(current_run, "trace_id", current_run.id))
+        # trace_id = str(getattr(current_run, "trace_id", current_run.id))
 
     # Patch missing 'server' field in each tool_call by matching known tools list
     for tool_call in response.tool_calls:
@@ -170,24 +182,9 @@ def job_posting_qa_agent_node(state):
             if matched_tool:
                 tool_call.server = matched_tool["server"]
 
-    if response.tool_calls and not response.final_answer:
-       tool_calls = []
-       for i, tc in enumerate(response.tool_calls):
-          tool_calls.append({
-                "id": f"call_{i}",
-                "name": tc.name,
-                "args": tc.arguments
-          })
-
-       ai_message = AIMessage(
-          content=response.answer,
-          tool_calls=tool_calls
-          )
-    else:
-       ai_message = AIMessage(
-          content=response.answer,
-       )
+    ai_message = format_ai_message(response)
     # Prepare tool calls for AIMessage
+    logger.info(f"[DEBUG]: Tool calls so far: {response.tool_calls}")
 
     return {
         "messages": [ai_message],
@@ -196,22 +193,23 @@ def job_posting_qa_agent_node(state):
         "answer": response.answer,
         "job_posting_qa_final_answer": response.final_answer,
         "retrieved_context_ids": response.retrieved_context_ids,
-        "trace_id": trace_id
+        # "trace_id": trace_id
     }
 
 
 @traceable(
     name="classifier_agent",
     run_type="llm",
-    metadata={"ls_provider": "openai", "ls_model_name": "gpt-4.1-mini"}
+    metadata={"ls_provider": "openai", "ls_model_name": "gpt-4.1"}
 )
-def classifier_agent_node(state) -> dict:
+def classifier_agent_node(state, models = ["gpt-4.1", "gpt-4.1-mini"]) -> dict:
 
-    prompt_template = prompt_template_config(config.RAG_PROMPT_TEMPLATE_PATH, "classifier_agent")
+    prompts = {}
 
-    prompt = prompt_template.render(
-        available_tools=state.classifier_available_tools
-    )
+    for model in models:
+        prompt_template = prompt_template_config(config.CLASSIFIER_AGENT_PROMPT_TEMPLATE_PATH, model)
+        prompt = prompt_template.render(available_tools=state.classifier_available_tools)
+        prompts[model] = prompt
     messages = state.messages
 
     conversation = []   # Previous messages + tool messages
@@ -219,27 +217,20 @@ def classifier_agent_node(state) -> dict:
     for msg in messages:
         conversation.append(lc_messages_to_regular_messages(msg))
 
-    client = instructor.from_openai(OpenAI())
-
-    # response, raw_response = client.chat.completions.create_with_completion(
-    #    model="gpt-4.1-mini",
-    #    response_model=AgentResponse,
-    #    messages=[{"role": "system", "content": prompt}, *conversation],
-    #    temperature=0.5,
-    # )
-
     from instructor.exceptions import InstructorRetryException
 
-    try:
-        response, raw_response = client.chat.completions.create_with_completion(
-            model="gpt-4.1-mini",
-            response_model=ClassifierAgentResponse,
-            messages=[{"role": "system", "content": prompt}, *conversation],
-            temperature=0.5,
-        )
-    except InstructorRetryException as ire:
-        print("Raw LLM output that caused error:", ire.last_completion)
-        raise  # or handle as needed
+    for model in models:
+        try:
+            response, raw_response = client.chat.completions.create_with_completion(
+                model=model,
+                response_model=ClassifierAgentResponse,
+                messages=[{"role": "system", "content": prompts[model]}, *conversation],
+                temperature=0,
+            )
+            break
+        except Exception as e:
+            print(f"Error with model {model}: {e}")
+            continue
 
 
     current_run = get_current_run_tree()
