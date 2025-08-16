@@ -64,44 +64,44 @@ results_gpt_4_1_mini = ls_client.evaluate(
 #     experiment_prefix="groq/llama-3.3-70b-versatile"
 # )
 
-# print(f"Sleeping for {SLEEP_TIME} seconds...")
-# sleep(SLEEP_TIME)
+print(f"Sleeping for {SLEEP_TIME} seconds...")
+sleep(SLEEP_TIME)
 
-# results_resp_gpt_4_1 = ls_client.read_project(
-#     project_name=results_gpt_4_1.experiment_name, include_stats=True
-# )
+results_resp_gpt_4_1 = ls_client.read_project(
+    project_name=results_gpt_4_1.experiment_name, include_stats=True
+)
 
-# results_resp_gpt_4_1_mini = ls_client.read_project(
-#     project_name=results_gpt_4_1_mini.experiment_name, include_stats=True
-# )
+results_resp_gpt_4_1_mini = ls_client.read_project(
+    project_name=results_gpt_4_1_mini.experiment_name, include_stats=True
+)
 
 # results_resp_groq_llama_3_3_70b_versatile = ls_client.read_project(
 #     project_name=results_groq_llama_3_3_70b_versatile.experiment_name, include_stats=True
 # )
 
 
-# output_message = "\n"
+output_message = "\n"
 
-# avg_metrics = []
-# error_count = 0
+avg_metrics = []
+error_count = 0
 
-# for result in zip(
-#     [results_resp_gpt_4_1, results_resp_gpt_4_1_mini, results_resp_groq_llama_3_3_70b_versatile],
-#     ["next_agent_evaluator_gpt_4_1", "next_agent_evaluator_gpt_4_1_mini", "next_agent_evaluator_groq_llama_3_3_70b_versatile"]
-# ):
+for result in zip(
+    [results_resp_gpt_4_1, results_resp_gpt_4_1_mini],
+    ["next_agent_evaluator_gpt_4_1", "next_agent_evaluator_gpt_4_1_mini"]
+):
 
-#     avg_metric = result[0].feedback_stats[result[1]]["avg"]
-#     avg_metrics.append(avg_metric)
-#     error_count += result[0].feedback_stats[result[1]]["errors"]
+    avg_metric = result[0].feedback_stats[result[1]]["avg"]
+    avg_metrics.append(avg_metric)
+    error_count += result[0].feedback_stats[result[1]]["errors"]
 
-#     if avg_metric >= ACC_THRESHOLD:
-#         output_message += f"✅ {result[1]} - Success: {avg_metric}\n"
-#     else:
-#         output_message += f"❌ {result[1]} - Failure: {avg_metric}\n"
+    if avg_metric >= ACC_THRESHOLD:
+        output_message += f"✅ {result[1]} - Success: {avg_metric}\n"
+    else:
+        output_message += f"❌ {result[1]} - Failure: {avg_metric}\n"
 
-# if error_count > 0:
-#     raise AssertionError(f"There were {error_count} errors while running evaluations.")
-# elif all(metric >= ACC_THRESHOLD for metric in avg_metrics):
-#     print(output_message, flush = True)
-# else:
-#     raise AssertionError(output_message)
+if error_count > 0:
+    raise AssertionError(f"There were {error_count} errors while running evaluations.")
+elif all(metric >= ACC_THRESHOLD for metric in avg_metrics):
+    print(output_message, flush = True)
+else:
+    raise AssertionError(output_message)
