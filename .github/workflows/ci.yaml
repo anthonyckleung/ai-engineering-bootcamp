@@ -13,7 +13,7 @@ jobs:
   run-evaluations:
     runs-on: ubuntu-latest
 
-    name: Eval Quality Gates
+    name: Eval Quality Gate
 
     steps:
     - name: Checkout code
