@@ -14,7 +14,11 @@ class Config(BaseSettings):
     LANGSMITH_ENDPOINT: str
     LANGSMITH_API_KEY: str
     LANGSMITH_PROJECT: str
-    RAG_PROMPT_TEMPLATE_PATH: str = "src/api/rag/prompts/rag_generation.yaml"
+    MINIO_ACCESS_KEY: str
+    MINIO_SECRET_KEY: str
+    COORDINATOR_AGENT_PROMPT_TEMPLATE_PATH: str = "src/api/rag/prompts/coordinator_agent.yaml"
+    JOB_POSTING_QA_AGENT_PROMPT_TEMPLATE_PATH: str =  "src/api/rag/prompts/job_posting_qa_agent.yaml"
+    CLASSIFIER_AGENT_PROMPT_TEMPLATE_PATH: str = "src/api/rag/prompts/classifier_agent.yaml"
     POSTGRES_CONN_STRING: str = "postgresql://langgraph_user:langgraph_password@postgres:5432/langgraph_db"
     model_config = SettingsConfigDict(env_file=".env")
 
