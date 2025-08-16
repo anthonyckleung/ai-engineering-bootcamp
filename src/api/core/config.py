@@ -1,21 +1,21 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Config(BaseSettings):
-    OPENAI_API_KEY: str
-    GROQ_API_KEY: str
-    GOOGLE_API_KEY: str
-    QDRANT_URL: str
-    QDRANT_COLLECTION_NAME: str 
-    EMBEDDING_MODEL: str
-    EMBEDDING_MODEL_PROVIDER: str
-    GENERATION_MODEL: str
-    GENERATION_MODEL_PROVIDER: str
-    LANGSMITH_TRACING: bool
-    LANGSMITH_ENDPOINT: str
-    LANGSMITH_API_KEY: str
-    LANGSMITH_PROJECT: str
-    MINIO_ACCESS_KEY: str
-    MINIO_SECRET_KEY: str
+    OPENAI_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
+    GOOGLE_API_KEY: str = ""
+    QDRANT_URL: str = ""
+    QDRANT_COLLECTION_NAME: str = "job-postings-collection-hybrid-search"
+    EMBEDDING_MODEL: str = ""
+    EMBEDDING_MODEL_PROVIDER: str = ""
+    GENERATION_MODEL: str = ""
+    GENERATION_MODEL_PROVIDER: str = ""
+    LANGSMITH_TRACING: bool = False
+    LANGSMITH_ENDPOINT: str = "https://api.smith.langchain.com"
+    LANGSMITH_API_KEY: str = ""
+    LANGSMITH_PROJECT: str = ""
+    MINIO_ACCESS_KEY: str = ""
+    MINIO_SECRET_KEY: str = ""
     COORDINATOR_AGENT_PROMPT_TEMPLATE_PATH: str = "src/api/rag/prompts/coordinator_agent.yaml"
     JOB_POSTING_QA_AGENT_PROMPT_TEMPLATE_PATH: str =  "src/api/rag/prompts/job_posting_qa_agent.yaml"
     CLASSIFIER_AGENT_PROMPT_TEMPLATE_PATH: str = "src/api/rag/prompts/classifier_agent.yaml"
