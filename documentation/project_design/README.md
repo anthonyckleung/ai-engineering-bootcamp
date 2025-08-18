@@ -21,6 +21,7 @@ in resolving issues/tickets/complaints efficiently.
 
 * End-users: Fraud Analysts
 * Purpose: Identify whether a job posting is real or fake (fraudulent)
+and perform text analysis to identify possible fraudulent indicators.
 
 
 ## Data & Knowledge
@@ -65,7 +66,14 @@ Source: https://www.kaggle.com/datasets/shivamb/real-or-fake-fake-jobposting-pre
 
 ## Deployment & Integration
 
-**TBD**
+1. Knowledge Base Preparation - collect and preprocess data appropriate for
+the RAG system. Chunk data into manageable pieces and upload to vector database.
+2. API integration - utilize FastAPI to create context-aware endpoints
+and be able to handle error handling. Implement feedback loops within
+workflows for continuous learning and system improvement.
+3. Testing and Validation - create RAG-specific testing for retrieval
+accuracy, relevance, and latency.
+4. Deployment Pipeline - Create automated deployment pipelines for code updates.
 
 ## Timeline & Milestones
 
