@@ -1,36 +1,86 @@
-# AI Engineering Bootcamp
+# Agentic Fraud Analyst Assistant 
 
-This sprint is dedicated to setting up your development environment and making sure that all configuration works as intended.
 
-## Documentation
+## Problem
+Company Y is a professional networking platform and is utilized
+by job seekers and recruiters. This company
+currently uses a rule-based system flags whether a job
+posting is fraudulent or not. Alternatively, the company
+receives complaints from people using their website on these suspicious
+job postings. The role of fraud analysts
+at this company is to determine the validity of these flags to ensure
+they are not false-positives. Occasionally ticket volume can be
+overwhelmingly high for the team to handle. 
 
-Project design and concept is found [here](https://github.com/anthonyckleung/ai-engineering-bootcamp-sprint-00/tree/24d468d3856edf92cc0b15c16ca362e245049354/documentation/project_design)
+## Goal
+Create an AI assistant for the fraud analyst team to leverage
+in resolving issues/tickets/complaints efficiently. 
 
-## Running the code
-- Clone the repository.
-- Run:
-```bash
-cp env.example .env
-```
+## Concept Design
+![](concept.png)
 
-Edit `.env` and add your API keys. Includes the following:
+* End-users: Fraud Analysts
+* Purpose: Identify whether a job posting is real or fake (fraudulent)
+and perform text analysis to identify possible fraudulent indicators.
 
-```
-OPENAI_API_KEY=your_google_api_key
-GOOGLE_API_KEY=your_google_api_key
-GROQ_API_KEY=your_groq_api_key
-LANGSMITH_API_KEY=langsmith_api_key
-```
 
-To build the project, run:
+## Data & Knowledge
+**Real/Fake Job Posting Dataset**
 
-```bash
-make build-docker-streamlit
-```
+Based on the Kaggle dataset with 18K postings where 600 of them
+are fraudulent. Consists of 18 columns including the following
+text data points:
+* Job title
+* Salary range
+* Company profile
+* Job description
+* Location of posting
 
-To run the project:
+Source: https://www.kaggle.com/datasets/shivamb/real-or-fake-fake-jobposting-prediction/data
 
-```bash
-make run-docker-streamlit
-```
 
+### Possible Prompt types
+
+| Prompt Category | Example |
+|-----------------|--------|
+| Classification |  "Is this job posting real or fake?" [Job posting text] |
+| Explanation | "Why do you think this job posting is fake (real)" |
+| Feature Extraction | "What features makes this job posting fake? |
+| Comparison	|"Which of these two postings is more likely to be a scam? [Job 1] vs [Job 2]"|
+|Step-by-Step	|"Evaluate this posting for fraud step by step. [job posting text]"|
+
+
+## Resources & Stakeholders
+* Director of IT/Fraud
+* Director of Data Science
+* Fraud Analyst
+* Data Scientist
+
+## Performance Metrics & Evals
+
+- Retrieval quality
+- End-to-End system performance (response time)
+- Final answer scoring
+- Task inference from user input
+- Reasoning steps, tool user, and final responses.
+
+## Deployment & Integration
+
+1. Knowledge Base Preparation - collect and preprocess data appropriate for
+the RAG system. Chunk data into manageable pieces and upload to vector database.
+2. API integration - utilize FastAPI to create context-aware endpoints
+and be able to handle error handling. Implement feedback loops within
+workflows for continuous learning and system improvement.
+3. Testing and Validation - create RAG-specific testing for retrieval
+accuracy, relevance, and latency.
+4. Deployment Pipeline - Create automated deployment pipelines for code updates.
+
+## Timeline & Milestones
+
+- Sprint 1: RAG Prototyping - embedding models & vector DB 
+- Sprint 2: Retrieval Quality & Prompt engineering
+- Sprint 3: Autonomous agents
+- Sprint 4: Agents & Agentic System
+- Sprint 5: From Basic to Agentic RAG
+- Sprint 6: Multi-Agent Systems
+- Sprint 7: Deployment, Optimization and Reliability
