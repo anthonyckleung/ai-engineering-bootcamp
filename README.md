@@ -1,5 +1,6 @@
 # Agentic Fraud Analyst Assistant 
 
+This is a project developed in the ["End-to-End AI Engineering Bootcamp"](https://www.newsletter.swirlai.com/p/breaking-into-ai-engineering-in-2025) that I enrolled in Aug. 2025.
 
 ## Problem
 Company Y is a professional networking platform and is utilized
@@ -17,7 +18,7 @@ Create an AI assistant for the fraud analyst team to leverage
 in resolving issues/tickets/complaints efficiently. 
 
 ## Concept Design
-![](concept.png)
+![](web/concept.png)
 
 * End-users: Fraud Analysts
 * Purpose: Identify whether a job posting is real or fake (fraudulent)
@@ -50,7 +51,7 @@ Source: https://www.kaggle.com/datasets/shivamb/real-or-fake-fake-jobposting-pre
 |Step-by-Step	|"Evaluate this posting for fraud step by step. [job posting text]"|
 
 
-## Resources & Stakeholders
+## Possible Stakeholders
 * Director of IT/Fraud
 * Director of Data Science
 * Fraud Analyst
