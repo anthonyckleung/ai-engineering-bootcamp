@@ -24,6 +24,8 @@ in resolving issues/tickets/complaints efficiently.
 * Purpose: Identify whether a job posting is real or fake (fraudulent)
 and perform text analysis to identify possible fraudulent indicators.
 
+## Architecture
+![](web/architecture.png)
 
 ## Data & Knowledge
 **Real/Fake Job Posting Dataset**
